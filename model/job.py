@@ -6,7 +6,6 @@ from enum import Enum
 
 from sqlalchemy import Column, Integer, String, BigInteger, DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from model.db import Session
 
 __author__ = 'Jiateng Liang'
 
@@ -27,16 +26,10 @@ class Job(BaseModel):
     update_time = Column(DateTime, nullable=False, default=datetime.now())
 
     class Status(Enum):
+        """
+        -1删除 0停止 1执行 2暂停
+        """
         DELETED = -1
         STOPPED = 0
         RUNNING = 1
         SUSPENDED = 2
-
-
-
-job = Job(name='sss', job_id='cn.s.')
-
-session = Session()
-session.add(job)
-
-session.commit()

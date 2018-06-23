@@ -3,6 +3,3 @@
 'some comment...'
 __author__ = 'Jiateng Liang'
 
-
-def test():
-    print("测试Job")
