@@ -27,8 +27,17 @@ class Scheduler(object):
         # 动态导入脚本
         script = importlib.import_module(job.job_id)
 
-        self._scheduler.add_job(script.run, CronTrigger.from_crontab(job.cron), id=job.job_id,
-                                start_date=job.start_date, end_date=job.end_date)
+        if job.start_date == '2000-01-01 00:00:00' and job.end_date == '2000-01-01 00:00:00':
+            self._scheduler.add_job(script.run, CronTrigger.from_crontab(job.cron), id=job.job_id)
+        elif job.start_date == '2000-01-01 00:00:00':
+            self._scheduler.add_job(script.run, CronTrigger.from_crontab(job.cron), id=job.job_id,
+                                    end_date=job.end_date)
+        elif job.end_date == '2000-01-01 00:00:00':
+            self._scheduler.add_job(script.run, CronTrigger.from_crontab(job.cron), id=job.job_id,
+                                    start_date=job.start_date)
+        else:
+            self._scheduler.add_job(script.run, CronTrigger.from_crontab(job.cron), id=job.job_id,
+                                    start_date=job.start_date, end_date=job.end_date)
 
     def suspend_job(self, job):
         if job.job_id in self._all_jobs:
@@ -41,6 +50,7 @@ class Scheduler(object):
     def remove_job(self, job):
         if job.job_id in self._all_jobs:
             del self._all_jobs[job.job_id]
+
 
 
 scheduler = Scheduler()
