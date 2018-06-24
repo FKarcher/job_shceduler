@@ -23,7 +23,7 @@ def run():
             job_id = filename[:-3]
             job = JobService.get_job(job_id)
             # 存在则不插入
-            if not job:
+            if job is None:
                 name = job_id
                 # 动态导入脚本
                 script = importlib.import_module('job.' + job_id)

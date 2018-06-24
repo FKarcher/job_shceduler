@@ -28,5 +28,8 @@ JOB_DEFAULTS = {
     'coalesce': False,
     'max_instances': 5
 }
-
+# 时区设置
 TIME_ZONE = 'utc'
+
+# 日志配置
+

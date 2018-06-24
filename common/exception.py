@@ -19,7 +19,7 @@ class ServiceException(Exception):
     def __init__(self, error_code, msg='', detail=''):
         Exception.__init__(self, msg)
         self.error_code = error_code
-        self.time = datetime.now()
+        self.time = str(datetime.now())
         self.msg = msg
         self.detail = detail
 
