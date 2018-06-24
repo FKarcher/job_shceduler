@@ -7,8 +7,14 @@ from common.scheduler import scheduler
 
 __author__ = 'Jiateng Liang'
 
+config = {
+    'name': '任务探测脚本',
+    'cron': '{"seconds": 30}'
+}
+
 
 def run():
+    print("*****************任务探测脚本执行*****************")
     # 运行
     jobs = JobService.list_jobs_by_status(Job.Status.RUNNING.value)
     for job in jobs:
@@ -22,9 +28,7 @@ def run():
     # 停止
     jobs = JobService.list_jobs_by_status(Job.Status.STOPPED.value)
     for job in jobs:
-        scheduler.stop_job(job)
-
-    # 删除
-    jobs = JobService.list_jobs_by_status(Job.Status.DELETED.value)
-    for job in jobs:
         scheduler.remove_job(job)
+
+    print("*****************任务探测脚本结束*****************")
+
