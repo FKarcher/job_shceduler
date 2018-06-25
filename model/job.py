@@ -44,7 +44,6 @@ class Job(BaseModel):
             SUSPENDED: '已暂停'
         }
 
-        ALL = [DELETED, STOPPED, RUNNING, SUSPENDED]
 
     @labels
     class Type(Enum):

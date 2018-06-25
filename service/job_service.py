@@ -8,6 +8,7 @@ from datetime import datetime
 from common.db import Session
 from common.exception import ServiceException, ErrorCode, handle_exception
 from model.job import Job
+from common.scheduler import scheduler
 
 __author__ = 'Jiateng Liang'
 
@@ -76,7 +77,14 @@ class JobService(object):
     @staticmethod
     @handle_exception
     def change_job_status(job_id, status):
-        if status not in Job.Status.ALL:
+        """
+        改变任务状态
+        :param job_id:
+        :param status:
+        :return:
+        """
+        all_status = [Job.Status.DELETED, Job.Status.STOPPED, Job.Status.RUNNING, Job.Status.SUSPENDED]
+        if status not in all_status:
             raise ServiceException(ErrorCode.PARAM_ERROR, 'status参数错误')
         session = Session()
         job = session.query(Job).filter(Job.job_id == job_id).first()
@@ -130,3 +138,103 @@ class JobService(object):
         job.instance_cnt = 1 if 'instance_cnt' not in config else config['instance_cnt']
         return job
 
+
+class JobRPCService(object):
+
+    @staticmethod
+    @handle_exception
+    def start_scheduler(self):
+        """
+        启动调度器
+        :return:
+        """
+        scheduler.start()
+
+    @staticmethod
+    @handle_exception
+    def stop_scheduler(self):
+        """
+        停止调度器
+        :return:
+        """
+        scheduler.shutdown()
+
+    @staticmethod
+    @handle_exception
+    def pause_scheduler(self):
+        """
+        暂停调度器
+        :return:
+        """
+        scheduler.pause()
+
+    @staticmethod
+    @handle_exception
+    def resume_scheduler(self):
+        """
+        重启调度器
+        :return:
+        """
+        scheduler.resume()
+
+    @staticmethod
+    @handle_exception
+    def start_job(job_id):
+        """
+        开启一个停止的任务或者暂停的任务
+        :param job_id:
+        :return:
+        """
+        session = Session()
+        job = session.query(Job).filter(Job.job_id == job_id).first()
+        if job is None:
+            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        if job.status != Job.Status.STOPPED.value or job.status != Job.Status.SUSPENDED.value:
+            raise ServiceException(ErrorCode.FAIL, '该任务无法启动，当前任务状态：%s' % job.Status.label(job.status))
+        if job.status == Job.Status.STOPPED.value:
+            scheduler.add_job(job)
+        else:
+            scheduler.resume_job(job)
+        job.status = Job.Status.RUNNING.value
+        session.add(job)
+        session.commit()
+
+    @staticmethod
+    @handle_exception
+    def stop_job(job_id):
+        """
+        任务停止
+        :param job_id:
+        :return:
+        """
+        session = Session()
+        job = session.query(Job).filter(Job.job_id == job_id).first()
+        if job is None:
+            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        if job.status != Job.Status.RUNNING.value:
+            raise ServiceException(ErrorCode.FAIL, '该任务无法启动，当前任务状态：%s' % job.Status.label(job.status))
+        scheduler.remove_job(job)
+        job.status = Job.Status.STOPPED.value
+        session.add(job)
+        session.commit()
+
+    @staticmethod
+    @handle_exception
+    def pause_job(job_id):
+        """
+        暂停任务
+        :param job_id:
+        :return:
+        """
+        session = Session()
+        job = session.query(Job).filter(Job.job_id == job_id).first()
+        if job is None:
+            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        if job.status != Job.Status.RUNNING.value:
+            raise ServiceException(ErrorCode.FAIL, '该任务无法启动，当前任务状态：%s' % job.Status.label(job.status))
+        scheduler.pause_job(job)
+        job.status = Job.Status.SUSPENDED.value
+        session.add(job)
+        session.commit()
+
+    

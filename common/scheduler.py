@@ -139,32 +139,37 @@ class Scheduler(object):
         job_id = event.job_id
         job = JobService.get_job(job_id)
         logger.info('定时任务%s加入了调度器，信息：%s' % (job_id, str(job)))
+        # 有自动加入的情况
+        if job.status != job.Status.RUNNING.value:
+            JobService.change_job_status(job_id, job.Status.RUNNING)
 
     def _on_job_remove(self, event):
         from service.job_service import JobService
         job_id = event.job_id
         job = JobService.get_job(job_id)
         logger.info('定时任务%s被移除了调度器，信息：%s' % (job_id, str(job)))
+        # 有自动删除的情况
+        if job.status != job.Status.STOPPED.value:
+            JobService.change_job_status(job_id, job.Status.STOPPED)
 
     def _on_job_modify(self, event):
         from service.job_service import JobService
         job_id = event.job_id
-        job = JobService.get_job(job_id)
-        logger.info('定时任务%s被更改了，信息：%s' % (job_id, str(job)))
+        job = self._scheduler.get_job(job_id)
+        if not job.next_run_time:
+            job = JobService.get_job(job_id)
+            logger.info('定时任务%s已暂停，信息：%s' % (job_id, str(job)))
+            if job.status != job.Status.SUSPENDED.value:
+                JobService.change_job_status(job_id, job.Status.SUSPENDED)
+        else:
+            logger.info('定时任务%s被修改或重启了并正在运行中，信息：%s' % (job_id, str(job)))
 
     def _on_job_error(self, event):
         from service.job_service import JobService
         e = event.exception
         job_id = event.job_id
         logger.warn('定时任务%s发生错误，将被移除调度器' % job_id)
-        if isinstance(e, ServiceException):
-            if e.error_code < 500:
-                logger.warn(e.get_log_msg())
-            else:
-                logger.error(e.get_log_msg())
-        else:
-            logger.error(str(e))
-
+        logger.error(str(e))
         task = JobService.get_job(job_id)
         self.remove_job(task)
 
@@ -186,6 +191,6 @@ class Scheduler(object):
     def _on_scheduler_stop(self, event):
         logger.info('调度器停止')
 
-
 # 全局唯一的scheduler，所有scheduler从这里引入
 scheduler = Scheduler()
+

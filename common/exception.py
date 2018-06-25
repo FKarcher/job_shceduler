@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '自定义异常'
+import traceback
 from datetime import datetime
 from common.log import logger
 
@@ -40,6 +41,7 @@ def handle_exception(func):
                 else:
                     logger.error(e.get_log_msg())
             else:
-                logger.error(str(e))
+                exstr = traceback.format_exc()
+                logger.error(str(e) + '\n详情：' + exstr)
 
     return wrapper
