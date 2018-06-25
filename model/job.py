@@ -44,6 +44,8 @@ class Job(BaseModel):
             SUSPENDED: '已暂停'
         }
 
+        ALL = [DELETED, STOPPED, RUNNING, SUSPENDED]
+
     @labels
     class Type(Enum):
         """
@@ -56,3 +58,9 @@ class Job(BaseModel):
             INTERVAL: 'Interval',
             CRON: 'Cron',
         }
+
+    def __repr__(self) -> str:
+        return str({'id': self.id, 'job_id': self.job_id, 'name': self.name, 'status': Job.Status.label(self.status),
+                    'executed_times': self.executed_times, 'cron': self.cron, 'type': Job.Type.label(self.type),
+                    'instance_cnt': self.instance_cnt,
+                    'create_time': self.create_time, 'update_time': self.update_time})

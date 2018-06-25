@@ -4,10 +4,8 @@
 
 __author__ = 'Jiateng Liang'
 
-from common.exception import handle_exception, ServiceException
 
 
-@handle_exception
 def scheduler_run():
     from common.scheduler import scheduler
     from service.job_service import JobService
