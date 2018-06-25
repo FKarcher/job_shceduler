@@ -9,8 +9,10 @@ __author__ = 'Jiateng Liang'
 
 config = {
     'name': '任务探测脚本',
-    'cron': '{"minutes": 3}'
+    'cron': '{"minutes": 3}',
+    'type': 1
 }
+
 
 def run():
     # 运行

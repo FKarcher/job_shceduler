@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '自定义异常'
 from datetime import datetime
+from common.log import logger
 
 __author__ = 'Jiateng Liang'
 
@@ -24,4 +25,21 @@ class ServiceException(Exception):
         self.detail = detail
 
     def get_log_msg(self):
-        return '时间：' + self.time + '；错误码：' + self.error_code + '；错误信息：' + self.msg + '；详情：' + self.detail
+        return '时间：' + self.time + '；错误码：' + str(self.error_code) + '；错误信息：' + self.msg + '；详情：' + self.detail
+
+
+# 异常捕捉器
+def handle_exception(func):
+    def wrapper(*args, **kw):
+        try:
+            return func(*args, **kw)
+        except Exception as e:
+            if isinstance(e, ServiceException):
+                if e.error_code < 500:
+                    logger.warn(e.get_log_msg())
+                else:
+                    logger.error(e.get_log_msg())
+            else:
+                logger.error(str(e))
+
+    return wrapper

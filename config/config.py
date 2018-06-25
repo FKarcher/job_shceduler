@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-'生产环境配置文件'
+'配置文件入口 from config.config import config'
 __author__ = 'Jiateng Liang'
+import sys
 
-# 数据库配置
-DB_USERNAME = 'root'
-DB_PASSWORD = ''
-HOST = 'localhost'
-DB_NAME = 'blog'
-DB_URL_CONNECTION = 'mysql+pymysql://' + DB_USERNAME + ':' + DB_PASSWORD + '@' + HOST + '/' + DB_NAME
+if len(sys.argv) <= 1:
+    import config.config_dev as config
+elif sys.argv[1] == 'dev':
+    import config.config_dev as config
+elif sys.argv[1] == 'test':
+    import config.config_test as config
+elif sys.argv[1] == 'prod':
+    import config_prod as config

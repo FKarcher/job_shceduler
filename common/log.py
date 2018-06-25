@@ -4,7 +4,7 @@
 from logging.handlers import TimedRotatingFileHandler
 
 __author__ = 'Jiateng Liang'
-from app import config
+from config.config import config
 
 import logging
 
@@ -35,6 +35,3 @@ if config.LOG_CONSOLE:
     console.setLevel(config.LOG_LEVEL)
     console.setFormatter(formatter)
     logger.addHandler(console)
-
-logger.info('heeee')
-

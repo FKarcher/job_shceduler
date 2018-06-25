@@ -3,15 +3,13 @@
 '任务调度器, job_id与定时任务脚本名称对应，唯一。所有任务脚本需要制定唯一入口run()'
 import importlib
 
-from apscheduler.triggers.cron import CronTrigger
-
 from common.exception import ServiceException, ErrorCode
 from model.job import Job
 
 __author__ = 'Jiateng Liang'
 
 from apscheduler.schedulers.background import BlockingScheduler
-from app import config
+from config.config import config
 import copy
 
 
@@ -39,7 +37,7 @@ class Scheduler(object):
             # 动态导入脚本
             script = importlib.import_module('job.' + task.job_id)
 
-            if not script or not script.run:
+            if script is None or script.run is None:
                 raise ServiceException(ErrorCode.FAIL, ("%s任务没有run方法" % task.job_id))
 
             try:
