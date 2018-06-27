@@ -39,3 +39,7 @@ LOG_PATH = '/Users/liangjiateng/Desktop/log.log'
 LOG_FORMAT = '%(asctime)-15s %(levelname)s %(filename)s %(lineno)d %(process)d %(message)s'
 LOG_DATE_FORMAT = "%a %d %b %Y %H:%M:%S"
 
+############# RPC配置 ############
+# 不要配成localhost!!!!
+RPC_HOST = '127.0.0.1'
+RPC_PORT = 9001

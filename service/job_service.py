@@ -18,7 +18,7 @@ __author__ = 'Jiateng Liang'
 class JobService(object):
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def list_jobs_by_status(status=None):
         """
         列出所有Job
@@ -32,7 +32,7 @@ class JobService(object):
         return session.query(Job).filter(Job.status == status).all()
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def get_job(job_id):
         """
         根据job_id获取job
@@ -46,7 +46,7 @@ class JobService(object):
         return job
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def insert_job(job):
         if not job or not job.job_id or not job.name:
             raise ServiceException(ErrorCode.PARAM_ERROR, 'job参数错误，job_id或name不能为空')
@@ -59,7 +59,7 @@ class JobService(object):
         return job.job_id
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def add_executed_times(job_id, cnt):
         """
         增加任务运行次数
@@ -77,7 +77,7 @@ class JobService(object):
         return job.job_id
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def change_job_status(job_id, status):
         """
         改变任务状态
@@ -98,7 +98,7 @@ class JobService(object):
         return job.job_id
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def load_jobs():
         """
         job导入脚本，执行后可将job目录下所有任务脚本导入到数据库
@@ -128,7 +128,7 @@ class JobService(object):
                         raise ServiceException(ErrorCode.FAIL, msg, str(e))
 
     @staticmethod
-    @handle_exception
+    @handle_exception(throwable=False)
     def package_job(config, default_name, default_job_id):
         job = Job()
         job.name = default_name if 'name' not in config else config['name']
@@ -140,11 +140,20 @@ class JobService(object):
         job.instance_cnt = 1 if 'instance_cnt' not in config else config['instance_cnt']
         return job
 
-
-class JobRPCService(object):
+    @staticmethod
+    def stop_all_jobs():
+        """
+        停止所有job
+        :return:
+        """
+        session = Session()
+        jobs = session.query(Job).all()
+        for job in jobs:
+            job.status = Job.Status.STOPPED.value
+            session.add(job)
+        session.commit()
 
     @staticmethod
-    @handle_exception
     def start_scheduler():
         """
         启动调度器
@@ -153,7 +162,6 @@ class JobRPCService(object):
         scheduler.start()
 
     @staticmethod
-    @handle_exception
     def stop_scheduler():
         """
         停止调度器
@@ -165,11 +173,10 @@ class JobRPCService(object):
         for job in jobs:
             job.status = Job.Status.STOPPED.value
             session.add(job)
-        session.commit()
         scheduler.shutdown()
+        session.commit()
 
     @staticmethod
-    @handle_exception
     def pause_scheduler():
         """
         暂停调度器
@@ -180,11 +187,10 @@ class JobRPCService(object):
         for job in jobs:
             job.status = Job.Status.SUSPENDED.value
             session.add(job)
-        session.commit()
         scheduler.pause()
+        session.commit()
 
     @staticmethod
-    @handle_exception
     def resume_scheduler():
         """
         重启调度器
@@ -195,11 +201,10 @@ class JobRPCService(object):
         for job in jobs:
             job.status = Job.Status.RUNNING.value
             session.add(job)
-        session.commit()
         scheduler.resume()
+        session.commit()
 
     @staticmethod
-    @handle_exception
     def start_job(job_id):
         """
         开启一个停止的任务或者暂停的任务
@@ -223,7 +228,6 @@ class JobRPCService(object):
         session.commit()
 
     @staticmethod
-    @handle_exception
     def stop_job(job_id):
         """
         任务停止
@@ -238,11 +242,10 @@ class JobRPCService(object):
             raise ServiceException(ErrorCode.FAIL, '该任务已经停止')
         job.status = Job.Status.STOPPED.value
         session.add(job)
-        session.commit()
         scheduler.remove_job(job)
+        session.commit()
 
     @staticmethod
-    @handle_exception
     def modify_job(job_id, config):
         """
         修改任务规则
@@ -265,9 +268,7 @@ class JobRPCService(object):
         session.add(job)
         session.commit()
 
-
     @staticmethod
-    @handle_exception
     def pause_job(job_id):
         """
         暂停任务
@@ -282,11 +283,10 @@ class JobRPCService(object):
             raise ServiceException(ErrorCode.FAIL, '该任务无法暂停，当前任务状态：%s' % job.Status.label(job.status))
         job.status = Job.Status.SUSPENDED.value
         session.add(job)
-        session.commit()
         scheduler.pause_job(job)
+        session.commit()
 
     @staticmethod
-    @handle_exception
     def submit_job(file_bytes, config):
         """
         传输文件脚本
@@ -317,4 +317,4 @@ class JobRPCService(object):
         session.add(job)
         job.create_time = datetime.now()
         session.commit()
-        return job
+        return job.job_id

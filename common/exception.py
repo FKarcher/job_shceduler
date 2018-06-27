@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '自定义异常'
+import functools
+import json
 import traceback
 from datetime import datetime
 from common.log import logger
+from thrift_server.thrift_gen.ttypes import JobServiceException
 
 __author__ = 'Jiateng Liang'
 
@@ -30,18 +33,26 @@ class ServiceException(Exception):
 
 
 # 异常捕捉器
-def handle_exception(func):
-    def wrapper(*args, **kw):
-        try:
-            return func(*args, **kw)
-        except Exception as e:
-            if isinstance(e, ServiceException):
-                if e.error_code < 500:
-                    logger.warn(e.get_log_msg())
+def handle_exception(throwable):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            try:
+                return func(*args, **kw)
+            except Exception as e:
+                if isinstance(e, ServiceException):
+                    if e.error_code < 500:
+                        logger.warn(e.get_log_msg())
+                    else:
+                        logger.error(e.get_log_msg())
                 else:
-                    logger.error(e.get_log_msg())
-            else:
-                exstr = traceback.format_exc()
-                logger.error(str(e) + '\n详情：' + exstr)
+                    exstr = traceback.format_exc()
+                    logger.error(str(e) + '\n详情：' + exstr)
 
-    return wrapper
+                if throwable:
+                    job_exception = JobServiceException(e.error_code, e.msg, e.time, e.detail)
+                    raise job_exception
+
+        return wrapper
+
+    return decorator

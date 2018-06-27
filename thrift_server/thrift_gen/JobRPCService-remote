@@ -32,7 +32,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  void stop_job(string job_id)')
     print('  void pause_job(string job_id)')
     print('  void modify_job(string job_id, string config)')
-    print('  void submit_job(string file_bytes, string config)')
+    print('  string submit_job(string file_bytes, string config)')
     print('')
     sys.exit(0)
 

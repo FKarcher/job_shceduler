@@ -3,41 +3,41 @@
 'comment'
 import time
 
-from service.job_service import JobService, JobRPCService
+from service.job_service import JobService
 
 __author__ = 'Jiateng Liang'
 
 
 def test_start_scheduler():
-    JobRPCService.start_scheduler()
+    JobService.start_scheduler()
 
 
 def test_stop_scheduler():
-    JobRPCService.stop_scheduler()
+    JobService.stop_scheduler()
 
 
 def test_pause_scheduler():
-    JobRPCService.pause_scheduler()
+    JobService.pause_scheduler()
 
 
 def test_resume_scheduler():
-    JobRPCService.resume_scheduler()
+    JobService.resume_scheduler()
 
 
 def test_start_job(job_id):
-    JobRPCService.start_job(job_id)
+    JobService.start_job(job_id)
 
 
 def test_stop_job(job_id):
-    JobRPCService.stop_job(job_id)
+    JobService.stop_job(job_id)
 
 
 def test_modify_job(job_id):
-    JobRPCService.modify_job(job_id, {'name': 'test', 'cron': '{"seconds": 8}'})
+    JobService.modify_job(job_id, {'name': 'test', 'cron': '{"seconds": 8}'})
 
 
 def test_pause_job(job_id):
-    JobRPCService.pause_job(job_id)
+    JobService.pause_job(job_id)
 
 
 def test_submit_job():
@@ -47,7 +47,7 @@ def test_submit_job():
         'job_id': 'jjjj',
         'cron': 'ddd'
     }
-    JobRPCService.submit_job(bytes, config)
+    JobService.submit_job(bytes, config)
 
 
 # test_start_scheduler()

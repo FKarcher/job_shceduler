@@ -98,6 +98,8 @@ class Client(Iface):
         result = start_scheduler_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def stop_scheduler(self):
@@ -122,6 +124,8 @@ class Client(Iface):
         result = stop_scheduler_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def pause_scheduler(self):
@@ -146,6 +150,8 @@ class Client(Iface):
         result = pause_scheduler_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def resume_scheduler(self):
@@ -170,6 +176,8 @@ class Client(Iface):
         result = resume_scheduler_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def start_job(self, job_id):
@@ -199,6 +207,8 @@ class Client(Iface):
         result = start_job_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def stop_job(self, job_id):
@@ -228,6 +238,8 @@ class Client(Iface):
         result = stop_job_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def pause_job(self, job_id):
@@ -257,6 +269,8 @@ class Client(Iface):
         result = pause_job_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def modify_job(self, job_id, config):
@@ -288,6 +302,8 @@ class Client(Iface):
         result = modify_job_result()
         result.read(iprot)
         iprot.readMessageEnd()
+        if result.ex is not None:
+            raise result.ex
         return
 
     def submit_job(self, file_bytes, config):
@@ -297,7 +313,7 @@ class Client(Iface):
          - config
         """
         self.send_submit_job(file_bytes, config)
-        self.recv_submit_job()
+        return self.recv_submit_job()
 
     def send_submit_job(self, file_bytes, config):
         self._oprot.writeMessageBegin('submit_job', TMessageType.CALL, self._seqid)
@@ -319,7 +335,11 @@ class Client(Iface):
         result = submit_job_result()
         result.read(iprot)
         iprot.readMessageEnd()
-        return
+        if result.success is not None:
+            return result.success
+        if result.ex is not None:
+            raise result.ex
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "submit_job failed: unknown result")
 
 
 class Processor(Iface, TProcessor):
@@ -361,6 +381,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -384,6 +407,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -407,6 +433,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -430,6 +459,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -453,6 +485,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -476,6 +511,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -499,6 +537,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -522,6 +563,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -541,10 +585,13 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = submit_job_result()
         try:
-            self._handler.submit_job(args.file_bytes, args.config)
+            result.success = self._handler.submit_job(args.file_bytes, args.config)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -605,7 +652,14 @@ start_scheduler_args.thrift_spec = (
 
 
 class start_scheduler_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -616,6 +670,12 @@ class start_scheduler_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -626,6 +686,10 @@ class start_scheduler_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('start_scheduler_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -644,6 +708,8 @@ class start_scheduler_result(object):
         return not (self == other)
 all_structs.append(start_scheduler_result)
 start_scheduler_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -691,7 +757,14 @@ stop_scheduler_args.thrift_spec = (
 
 
 class stop_scheduler_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -702,6 +775,12 @@ class stop_scheduler_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -712,6 +791,10 @@ class stop_scheduler_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('stop_scheduler_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -730,6 +813,8 @@ class stop_scheduler_result(object):
         return not (self == other)
 all_structs.append(stop_scheduler_result)
 stop_scheduler_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -777,7 +862,14 @@ pause_scheduler_args.thrift_spec = (
 
 
 class pause_scheduler_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -788,6 +880,12 @@ class pause_scheduler_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -798,6 +896,10 @@ class pause_scheduler_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('pause_scheduler_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -816,6 +918,8 @@ class pause_scheduler_result(object):
         return not (self == other)
 all_structs.append(pause_scheduler_result)
 pause_scheduler_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -863,7 +967,14 @@ resume_scheduler_args.thrift_spec = (
 
 
 class resume_scheduler_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -874,6 +985,12 @@ class resume_scheduler_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -884,6 +1001,10 @@ class resume_scheduler_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('resume_scheduler_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -902,6 +1023,8 @@ class resume_scheduler_result(object):
         return not (self == other)
 all_structs.append(resume_scheduler_result)
 resume_scheduler_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -967,7 +1090,14 @@ start_job_args.thrift_spec = (
 
 
 class start_job_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -978,6 +1108,12 @@ class start_job_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -988,6 +1124,10 @@ class start_job_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('start_job_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -1006,6 +1146,8 @@ class start_job_result(object):
         return not (self == other)
 all_structs.append(start_job_result)
 start_job_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -1071,7 +1213,14 @@ stop_job_args.thrift_spec = (
 
 
 class stop_job_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -1082,6 +1231,12 @@ class stop_job_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -1092,6 +1247,10 @@ class stop_job_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('stop_job_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -1110,6 +1269,8 @@ class stop_job_result(object):
         return not (self == other)
 all_structs.append(stop_job_result)
 stop_job_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -1175,7 +1336,14 @@ pause_job_args.thrift_spec = (
 
 
 class pause_job_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -1186,6 +1354,12 @@ class pause_job_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -1196,6 +1370,10 @@ class pause_job_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('pause_job_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -1214,6 +1392,8 @@ class pause_job_result(object):
         return not (self == other)
 all_structs.append(pause_job_result)
 pause_job_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -1291,7 +1471,14 @@ modify_job_args.thrift_spec = (
 
 
 class modify_job_result(object):
+    """
+    Attributes:
+     - ex
+    """
 
+
+    def __init__(self, ex=None,):
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -1302,6 +1489,12 @@ class modify_job_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -1312,6 +1505,10 @@ class modify_job_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('modify_job_result')
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -1330,6 +1527,8 @@ class modify_job_result(object):
         return not (self == other)
 all_structs.append(modify_job_result)
 modify_job_result.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 
 
@@ -1407,7 +1606,16 @@ submit_job_args.thrift_spec = (
 
 
 class submit_job_result(object):
+    """
+    Attributes:
+     - success
+     - ex
+    """
 
+
+    def __init__(self, success=None, ex=None,):
+        self.success = success
+        self.ex = ex
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -1418,6 +1626,17 @@ class submit_job_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 0:
+                if ftype == TType.STRING:
+                    self.success = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -1428,6 +1647,14 @@ class submit_job_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('submit_job_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRING, 0)
+            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeFieldEnd()
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -1446,6 +1673,8 @@ class submit_job_result(object):
         return not (self == other)
 all_structs.append(submit_job_result)
 submit_job_result.thrift_spec = (
+    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 fix_spec(all_structs)
 del all_structs

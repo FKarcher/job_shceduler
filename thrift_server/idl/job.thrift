@@ -1,20 +1,28 @@
+exception JobServiceException{
+    1: i32 code,
+    2: string msg,
+    3: string time,
+    4: string detail
+}
+
 service JobRPCService{
 
-    void start_scheduler()
+    void start_scheduler() throws (1: JobServiceException ex)
 
-    void stop_scheduler()
+    void stop_scheduler() throws (1: JobServiceException ex)
 
-    void pause_scheduler()
+    void pause_scheduler() throws (1: JobServiceException ex)
 
-    void resume_scheduler()
+    void resume_scheduler() throws (1: JobServiceException ex)
 
-    void start_job(1: string job_id)
+    void start_job(1: string job_id) throws (1: JobServiceException ex)
 
-    void stop_job(1: string job_id)
+    void stop_job(1: string job_id) throws (1: JobServiceException ex)
 
-    void pause_job(1: string job_id)
+    void pause_job(1: string job_id) throws (1: JobServiceException ex)
 
-    void modify_job(1: string job_id, 2: string config)
+    void modify_job(1: string job_id, 2: string config) throws (1: JobServiceException ex)
 
-    void submit_job(1: string file_bytes, 2: string config)
+    string submit_job(1: string file_bytes, 2: string config) throws (1: JobServiceException ex)
 }
+
