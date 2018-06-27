@@ -63,3 +63,4 @@ class Job(BaseModel):
                     'executed_times': self.executed_times, 'cron': self.cron, 'type': Job.Type.label(self.type),
                     'instance_cnt': self.instance_cnt,
                     'create_time': self.create_time, 'update_time': self.update_time})
+

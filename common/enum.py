@@ -6,7 +6,7 @@
 def labels(cls):
     @classmethod
     def to_str(cls, val):
-        if not val:
+        if val is None:
             return ''
         elif hasattr(cls, '__labels__'):
             return cls.__labels__.get(int(val))
