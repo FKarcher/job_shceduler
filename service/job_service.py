@@ -11,6 +11,7 @@ from common.db import Session
 from common.exception import ServiceException, ErrorCode, handle_exception
 from model.job import Job
 from common.scheduler import scheduler, RUNNING, STOPPED, PAUSED
+from common.db import session
 
 __author__ = 'Jiateng Liang'
 
@@ -25,7 +26,6 @@ class JobService(object):
         :param status: -1删除 0停止 1执行 2暂停 3待加入
         :return: [Job]
         """
-        session = Session()
         if status is None:
             return session.query(Job).all()
 
@@ -39,7 +39,6 @@ class JobService(object):
         :param job_id:
         :return:
         """
-        session = Session()
         job = session.query(Job).filter(Job.job_id == job_id).first()
         if job is None:
             raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
@@ -50,8 +49,7 @@ class JobService(object):
     def insert_job(job):
         if not job or not job.job_id or not job.name:
             raise ServiceException(ErrorCode.PARAM_ERROR, 'job参数错误，job_id或name不能为空')
-        session = Session()
-        if session.query(Job).filter(Job.job_id == job.job_id).first():
+        if session.query(Job).filter(Job.job_id == job.job_id).first() is not None:
             raise ServiceException(ErrorCode.FAIL, 'job_id重复，该任务已经存在')
         job.create_time = datetime.now()
         session.add(job)
@@ -67,10 +65,7 @@ class JobService(object):
         :param cnt: 次数
         :return:
         """
-        session = Session()
-        job = session.query(Job).filter(Job.job_id == job_id).first()
-        if job is None:
-            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        job = JobService.get_job(job_id)
         job.executed_times += cnt
         session.add(job)
         session.commit()
@@ -89,9 +84,7 @@ class JobService(object):
         if status not in all_status:
             raise ServiceException(ErrorCode.PARAM_ERROR, 'status参数错误')
         session = Session()
-        job = session.query(Job).filter(Job.job_id == job_id).first()
-        if job is None:
-            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        job = JobService.get_job(job_id)
         job.status = status.value
         session.add(job)
         session.commit()
@@ -99,55 +92,12 @@ class JobService(object):
 
     @staticmethod
     @handle_exception(throwable=False)
-    def load_jobs():
-        """
-        job导入脚本，执行后可将job目录下所有任务脚本导入到数据库
-        :return:
-        """
-        # 列出job目录下所有文件, 文件名称作为job_id
-        path = os.getcwd() + "/../job/"
-        for filename in os.listdir(path):
-            if filename != '__init__.py' and filename != '__pycache__':
-                job_id = filename[:-3]
-                job = JobService.get_job(job_id)
-                # 存在则不插入
-                if job is None:
-                    name = job_id
-                    # 动态导入脚本
-                    script = importlib.import_module('job.' + job_id)
-                    if hasattr(script, 'config'):
-                        config = script.config
-                        job = JobService.package_job(config, name, job_id)
-                    else:
-                        job = Job(name=name, job_id=job_id)
-
-                    try:
-                        JobService.insert_job(job)
-                    except Exception as e:
-                        msg = '%s任务脚本导入失败' % job_id + '，详细信息：'
-                        raise ServiceException(ErrorCode.FAIL, msg, str(e))
-
-    @staticmethod
-    @handle_exception(throwable=False)
-    def package_job(config, default_name, default_job_id):
-        job = Job()
-        job.name = default_name if 'name' not in config else config['name']
-        job.job_id = default_job_id if 'job_id' not in config else config['job_id']
-        job.cron = '' if 'cron' not in config else config['cron']
-        job.type = 1 if 'type' not in config else config['type']
-        job.start_date = '2000-01-01 00:00:00' if 'start_date' not in config else config['start_date']
-        job.end_date = '2000-01-01 00:00:00' if 'end_date' not in config else config['end_date']
-        job.instance_cnt = 1 if 'instance_cnt' not in config else config['instance_cnt']
-        return job
-
-    @staticmethod
     def stop_all_jobs():
         """
         停止所有job
         :return:
         """
-        session = Session()
-        jobs = session.query(Job).all()
+        jobs = JobService.list_jobs_by_status()
         for job in jobs:
             job.status = Job.Status.STOPPED.value
             session.add(job)
@@ -167,7 +117,6 @@ class JobService(object):
         停止调度器
         :return:
         """
-        session = Session()
         jobs = session.query(Job).filter(
             or_(Job.status == Job.Status.RUNNING.value, Job.status == Job.Status.SUSPENDED.value)).all()
         for job in jobs:
@@ -182,8 +131,7 @@ class JobService(object):
         暂停调度器
         :return:
         """
-        session = Session()
-        jobs = session.query(Job).filter(Job.status == Job.Status.RUNNING.value).all()
+        jobs = JobService.list_jobs_by_status(Job.Status.RUNNING.value)
         for job in jobs:
             job.status = Job.Status.SUSPENDED.value
             session.add(job)
@@ -196,8 +144,7 @@ class JobService(object):
         重启调度器
         :return:
         """
-        session = Session()
-        jobs = session.query(Job).filter(Job.status == Job.Status.SUSPENDED.value).all()
+        jobs = JobService.list_jobs_by_status(Job.Status.SUSPENDED.value)
         for job in jobs:
             job.status = Job.Status.RUNNING.value
             session.add(job)
@@ -213,10 +160,7 @@ class JobService(object):
         """
         if scheduler.status() != RUNNING:
             raise ServiceException(ErrorCode.FAIL, '无法启动任务，调度器没有运行')
-        session = Session()
-        job = session.query(Job).filter(Job.job_id == job_id).first()
-        if job is None:
-            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        job = JobService.get_job(job_id)
         if job.status != Job.Status.STOPPED.value and job.status != Job.Status.SUSPENDED.value:
             raise ServiceException(ErrorCode.FAIL, '该任务无法启动，当前任务状态：%s' % job.Status.label(job.status))
         if job.status == Job.Status.STOPPED.value:
@@ -234,10 +178,7 @@ class JobService(object):
         :param job_id:
         :return:
         """
-        session = Session()
-        job = session.query(Job).filter(Job.job_id == job_id).first()
-        if job is None:
-            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        job = JobService.get_job(job_id)
         if job.status == Job.Status.STOPPED.value:
             raise ServiceException(ErrorCode.FAIL, '该任务已经停止')
         job.status = Job.Status.STOPPED.value
@@ -252,10 +193,7 @@ class JobService(object):
         :param job_id:
         :return:
         """
-        session = Session()
-        job = session.query(Job).filter(Job.job_id == job_id).first()
-        if job is None:
-            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        job = JobService.get_job(job_id)
         if job.status != Job.Status.STOPPED.value:
             raise ServiceException(ErrorCode.FAIL, '请先停止任务，当前状态：' + job.Status.label(job.status))
         try:
@@ -275,10 +213,7 @@ class JobService(object):
         :param job_id:
         :return:
         """
-        session = Session()
-        job = session.query(Job).filter(Job.job_id == job_id).first()
-        if job is None:
-            raise ServiceException(ErrorCode.NOT_FOUND, '该任务不存在')
+        job = JobService.get_job(job_id)
         if job.status != Job.Status.RUNNING.value:
             raise ServiceException(ErrorCode.FAIL, '该任务无法暂停，当前任务状态：%s' % job.Status.label(job.status))
         job.status = Job.Status.SUSPENDED.value
@@ -294,7 +229,6 @@ class JobService(object):
         :param config:
         :return:
         """
-        session = Session()
         try:
             job = Job()
             job.name = config['name']

@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 from common.log import logger
 from thrift_server.thrift_gen.ttypes import JobServiceException
+from common.db import session
 
 __author__ = 'Jiateng Liang'
 
@@ -52,6 +53,9 @@ def handle_exception(throwable):
                 if throwable:
                     job_exception = JobServiceException(e.error_code, e.msg, e.time, e.detail)
                     raise job_exception
+                session.rollback()
+            finally:
+                session.close()
 
         return wrapper
 
