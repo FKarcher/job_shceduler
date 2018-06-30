@@ -10,3 +10,4 @@ if __name__ == '__main__':
     # 防止意外停止
     JobService.stop_all_jobs()
     server.run()
+

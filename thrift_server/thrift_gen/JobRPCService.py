@@ -68,6 +68,9 @@ class Iface(object):
         """
         pass
 
+    def status(self):
+        pass
+
 
 class Client(Iface):
     def __init__(self, iprot, oprot=None):
@@ -341,6 +344,34 @@ class Client(Iface):
             raise result.ex
         raise TApplicationException(TApplicationException.MISSING_RESULT, "submit_job failed: unknown result")
 
+    def status(self):
+        self.send_status()
+        return self.recv_status()
+
+    def send_status(self):
+        self._oprot.writeMessageBegin('status', TMessageType.CALL, self._seqid)
+        args = status_args()
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_status(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = status_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.ex is not None:
+            raise result.ex
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "status failed: unknown result")
+
 
 class Processor(Iface, TProcessor):
     def __init__(self, handler):
@@ -355,6 +386,7 @@ class Processor(Iface, TProcessor):
         self._processMap["pause_job"] = Processor.process_pause_job
         self._processMap["modify_job"] = Processor.process_modify_job
         self._processMap["submit_job"] = Processor.process_submit_job
+        self._processMap["status"] = Processor.process_status
 
     def process(self, iprot, oprot):
         (name, type, seqid) = iprot.readMessageBegin()
@@ -601,6 +633,32 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("submit_job", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_status(self, seqid, iprot, oprot):
+        args = status_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = status_result()
+        try:
+            result.success = self._handler.status()
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except JobServiceException as ex:
+            msg_type = TMessageType.REPLY
+            result.ex = ex
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("status", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -1674,6 +1732,122 @@ class submit_job_result(object):
 all_structs.append(submit_job_result)
 submit_job_result.thrift_spec = (
     (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
+)
+
+
+class status_args(object):
+
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('status_args')
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(status_args)
+status_args.thrift_spec = (
+)
+
+
+class status_result(object):
+    """
+    Attributes:
+     - success
+     - ex
+    """
+
+
+    def __init__(self, success=None, ex=None,):
+        self.success = success
+        self.ex = ex
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.I32:
+                    self.success = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.ex = JobServiceException()
+                    self.ex.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('status_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.I32, 0)
+            oprot.writeI32(self.success)
+            oprot.writeFieldEnd()
+        if self.ex is not None:
+            oprot.writeFieldBegin('ex', TType.STRUCT, 1)
+            self.ex.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(status_result)
+status_result.thrift_spec = (
+    (0, TType.I32, 'success', None, None, ),  # 0
     (1, TType.STRUCT, 'ex', [JobServiceException, None], None, ),  # 1
 )
 fix_spec(all_structs)

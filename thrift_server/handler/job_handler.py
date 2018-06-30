@@ -47,3 +47,7 @@ class JobController:
     def submit_job(self, file_bytes, config):
         return JobService.submit_job(file_bytes, config)
 
+    @handle_exception(throwable=True)
+    def status(self):
+        return JobService.status()
+

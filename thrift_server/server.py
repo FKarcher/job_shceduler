@@ -25,3 +25,4 @@ def run():
 
     logger.info("******** 启动Thrift server ********")
     server.serve()
+

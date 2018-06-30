@@ -97,11 +97,13 @@ class JobService(object):
         停止所有job
         :return:
         """
+
         jobs = JobService.list_jobs_by_status()
         for job in jobs:
             job.status = Job.Status.STOPPED.value
             session.add(job)
         session.commit()
+
 
     @staticmethod
     def start_scheduler():
@@ -185,6 +187,15 @@ class JobService(object):
         session.add(job)
         scheduler.remove_job(job)
         session.commit()
+
+    @staticmethod
+    def status():
+        """
+        获取当前状态
+        0 停止，1 运行，2暂停
+        :return:
+        """
+        return scheduler.status()
 
     @staticmethod
     def modify_job(job_id, config):

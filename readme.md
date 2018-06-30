@@ -1,3 +1,7 @@
+# Task Scheduling System
+
+Used thrift as RPC framework.
+```
 exception JobServiceException{
     1: i32 code,
     2: string msg,
@@ -29,3 +33,4 @@ service JobRPCService{
     i32 status() throws (1: JobServiceException ex)
 }
 
+```

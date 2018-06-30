@@ -33,6 +33,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  void pause_job(string job_id)')
     print('  void modify_job(string job_id, string config)')
     print('  string submit_job(string file_bytes, string config)')
+    print('  i32 status()')
     print('')
     sys.exit(0)
 
@@ -165,6 +166,12 @@ elif cmd == 'submit_job':
         print('submit_job requires 2 args')
         sys.exit(1)
     pp.pprint(client.submit_job(args[0], args[1],))
+
+elif cmd == 'status':
+    if len(args) != 0:
+        print('status requires 0 args')
+        sys.exit(1)
+    pp.pprint(client.status())
 
 else:
     print('Unrecognized method %s' % cmd)
