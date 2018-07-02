@@ -1,6 +1,8 @@
-# Task Scheduling System
+# Cron Job Scheduling System
 
 Used thrift as RPC framework.
+
+# IDL
 ```
 exception JobServiceException{
     1: i32 code,
