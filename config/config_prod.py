@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-'开发环境配置文件'
+'生产环境配置文件'
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 
 __author__ = 'Jadyn Liang'
 
 ############ 数据库配置 #############
-DB_USERNAME = 'root'
-DB_PASSWORD = ''
+DB_USERNAME = 'liangjiateng_blog_prod'
+DB_PASSWORD = '71E36E4C76607A954FEC1DC390EDAE57'
 HOST = 'localhost'
 DB_NAME = 'blog'
 DB_URL_CONNECTION = 'mysql+pymysql://' + DB_USERNAME + ':' + DB_PASSWORD + '@' + HOST + '/' + DB_NAME + '?charset=utf8'
@@ -32,10 +32,10 @@ JOB_DEFAULTS = {
 TIME_ZONE = 'utc'
 
 ############# 日志配置 ############
-LOG_NAME = 'Timed Task Dev Mode'
+LOG_NAME = 'Timed Task Prod Mode'
 LOG_CONSOLE = True  # 是否打印到控制台
-LOG_LEVEL = 'DEBUG'  # DEBUG INFO WARN ERROR
-LOG_PATH = '/Users/liangjiateng/Desktop/log.log'
+LOG_LEVEL = 'INFO'  # DEBUG INFO WARN ERROR
+LOG_PATH = '../log/job_scheduler/info.log'
 LOG_FORMAT = '%(asctime)-15s %(levelname)s %(filename)s %(lineno)d %(process)d %(message)s'
 LOG_DATE_FORMAT = "%a %d %b %Y %H:%M:%S"
 
