@@ -185,8 +185,9 @@ class JobService(object):
             raise ServiceException(ErrorCode.FAIL, '该任务已经停止')
         job.status = Job.Status.STOPPED.value
         session.add(job)
-        scheduler.remove_job(job)
         session.commit()
+        scheduler.remove_job(job)
+
 
     @staticmethod
     def status():
@@ -208,6 +209,7 @@ class JobService(object):
         if job.status != Job.Status.STOPPED.value:
             raise ServiceException(ErrorCode.FAIL, '请先停止任务，当前状态：' + job.Status.label(job.status))
         try:
+            config = eval(config)
             job.name = config['name'] if 'name' in config else job.name
             job.cron = config['cron'] if 'cron' in config else job.cron
             job.type = config['type'] if 'type' in config else job.type
@@ -229,8 +231,9 @@ class JobService(object):
             raise ServiceException(ErrorCode.FAIL, '该任务无法暂停，当前任务状态：%s' % job.Status.label(job.status))
         job.status = Job.Status.SUSPENDED.value
         session.add(job)
-        scheduler.pause_job(job)
         session.commit()
+        scheduler.pause_job(job)
+
 
     @staticmethod
     def submit_job(file_bytes, config):
@@ -241,6 +244,7 @@ class JobService(object):
         :return:
         """
         try:
+            config = eval(config)
             job = Job()
             job.name = config['name']
             job.job_id = config['job_id']

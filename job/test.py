@@ -4,11 +4,6 @@
 
 __author__ = 'Jiateng Liang'
 
-config = {
-    'name': '测试',
-    'job_id': 'test',
-    'cron': '{"seconds": 5}'
-}
 
 
 def run():
