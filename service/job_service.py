@@ -122,10 +122,8 @@ class JobService(object):
         jobs = session.query(Job).filter(
             or_(Job.status == Job.Status.RUNNING.value, Job.status == Job.Status.SUSPENDED.value)).all()
         for job in jobs:
-            job.status = Job.Status.STOPPED.value
-            session.add(job)
-        scheduler.shutdown()
-        session.commit()
+            JobService.stop_job(job.job_id)
+        scheduler.shutdown(waited=False)
 
     @staticmethod
     def pause_scheduler():
