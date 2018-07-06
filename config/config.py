@@ -11,4 +11,4 @@ elif sys.argv[1] == 'dev':
 elif sys.argv[1] == 'test':
     import config.config_test as config
 elif sys.argv[1] == 'prod':
-    import config_prod as config
+    import config.config_prod as config

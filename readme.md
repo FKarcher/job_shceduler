@@ -36,3 +36,13 @@ service JobRPCService{
 }
 
 ```
+# How to run
+
+ - Create the table in `sql/create_table.sql`
+ - `./run.sh prod` (dev, test, prod)
+
+# Log
+
+## v1.0.0
+
+Basic cron job scheduling.
