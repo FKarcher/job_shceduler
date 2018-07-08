@@ -17,7 +17,6 @@ __author__ = 'Jiateng Liang'
 
 
 class JobService(object):
-
     @staticmethod
     @handle_exception(throwable=False)
     def list_jobs_by_status(status=None):
@@ -104,7 +103,6 @@ class JobService(object):
             session.add(job)
         session.commit()
 
-
     @staticmethod
     def start_scheduler():
         """
@@ -186,7 +184,6 @@ class JobService(object):
         session.commit()
         scheduler.remove_job(job)
 
-
     @staticmethod
     def status():
         """
@@ -232,7 +229,6 @@ class JobService(object):
         session.commit()
         scheduler.pause_job(job)
 
-
     @staticmethod
     def submit_job(file_bytes, config):
         """
@@ -265,3 +261,5 @@ class JobService(object):
         job.create_time = datetime.now()
         session.commit()
         return job.job_id
+
+

@@ -22,7 +22,6 @@ PAUSED = 2
 
 
 class Scheduler(object):
-
     def __init__(self):
         self._scheduler = BackgroundScheduler(executors=config.EXECUTORS, job_defaults=config.JOB_DEFAULTS,
                                               timezone=config.TIME_ZONE)
@@ -78,7 +77,7 @@ class Scheduler(object):
             # 动态导入脚本
             script = importlib.import_module('job.' + task.job_id)
 
-            if script is None or script.run is None:
+            if script is None or not hasattr(script, 'run'):
                 raise ServiceException(ErrorCode.FAIL, ("%s任务没有run方法" % task.job_id))
 
             try:
@@ -121,8 +120,6 @@ class Scheduler(object):
                 self._scheduler.resume_job(task.job_id)
         else:
             raise ServiceException(ErrorCode.FAIL, ("任务%s不存在" % task.job_id))
-
-
 
     # def modify_job(self, task):
     #     current_job = self._scheduler.get_job(task.job_id)
@@ -210,6 +207,9 @@ class Scheduler(object):
     def _on_scheduler_stop(self, event):
         logger.info('调度器停止')
 
+    def next_run_time(self, job_id):
+
+        return self._scheduler.get_job(job_id).next_run_time
 
 # 全局唯一的scheduler，所有scheduler从这里引入
 scheduler = Scheduler()
