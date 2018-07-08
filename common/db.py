@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 __author__ = 'Jiateng Liang'
 from config.config import config
 
-engine = create_engine(config.DB_URL_CONNECTION, encoding='utf-8')
+engine = create_engine(config.DB_URL_CONNECTION, encoding='utf-8', pool_recycle=3600, pool_pre_ping=True)
 engine.echo = config.ENABLE_SQL_LOG
 Session = sessionmaker(bind=engine)
 

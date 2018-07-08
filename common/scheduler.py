@@ -42,13 +42,14 @@ class Scheduler(object):
             raise ServiceException(ErrorCode.FAIL, '无法启动调度器，调度器不在停止状态')
         self._scheduler.start()
 
-    def shutdown(self, waited=True):
+    def shutdown(self, waited=False):
         """
         :param waited: 等待所有任务执行结束后再停止
         :return:
         """
         if self.status() != RUNNING:
             raise ServiceException(ErrorCode.FAIL, '无法停止调度器，调度器不在运行状态')
+        self._scheduler.remove_all_jobs()
         self._scheduler.shutdown(wait=waited)
 
     def pause(self):

@@ -121,7 +121,7 @@ class JobService(object):
             or_(Job.status == Job.Status.RUNNING.value, Job.status == Job.Status.SUSPENDED.value)).all()
         for job in jobs:
             JobService.stop_job(job.job_id)
-        scheduler.shutdown(waited=False)
+        scheduler.shutdown(waited=True)
 
     @staticmethod
     def pause_scheduler():

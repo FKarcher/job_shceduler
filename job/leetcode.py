@@ -8,7 +8,7 @@ from enum import Enum
 from sqlalchemy import Column, Integer, String, BigInteger, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from common.enum import labels
-from common.db import session, engine
+from common.db import session
 from common.log import logger
 import base64
 
@@ -56,10 +56,15 @@ class LeetcodeInfo(BaseModel):
 
 
 def run():
-    leetcode_infos = list_leetcode_info_by_status(LeetcodeInfo.Status.RUNNING.value)
-    for leetcode_info in leetcode_infos:
-        password = base64.b64decode(leetcode_info.password).decode('utf-8')
-        __run(leetcode_info.username, password)
+    logger.info('Leetcode自动签到服务开始执行')
+    try:
+        leetcode_infos = list_leetcode_info_by_status(LeetcodeInfo.Status.RUNNING.value)
+        for leetcode_info in leetcode_infos:
+            password = base64.b64decode(leetcode_info.password).decode('utf-8')
+            __run(leetcode_info.username, password)
+    finally:
+        session.close()
+        logger.info('Leetcode自动签到服务执行完毕')
 
 
 def __run(username, password):
@@ -69,13 +74,9 @@ def __run(username, password):
     :param password: 登录密码
     :return:
     """
-    try:
-        token, user_slag = login(username, password)
-        info = get_info(token, user_slag)
-    except Exception as ex:
-        logger.error('Username=%s账号leetcode爬取信息失败' % username)
-        logger.error(ex)
-        return
+
+    token, user_slag = login(username, password)
+    info = get_info(token, user_slag)
 
     info['username'] = username
     info['password'] = base64.b64encode(password.encode(encoding='utf-8'))
@@ -160,25 +161,49 @@ def get_info(token, user_slag):
 
     location_info = soup.find_all("span", class_='pull-right content-right-cut')
 
-    location = location_info[0].get_text().strip()
-    school = location_info[1].get_text().strip()
+    location = None
+    school = None
+    if len(location_info) > 0:
+        location = location_info[0].get_text().strip()
+        school = location_info[1].get_text().strip()
 
     problem_info = soup.find_all("span", class_="badge progress-bar-success")
 
-    finished_contests = problem_info[0].get_text().strip()
-    rating = problem_info[1].get_text().strip()
-    global_ranking = problem_info[2].get_text().strip()
-    solved_question = problem_info[3].get_text().strip()
-    accepted_submission = problem_info[4].get_text().strip()
-    points = problem_info[5].get_text().strip()
-    problems = problem_info[6].get_text().strip()
-    test_cases = problem_info[7].get_text().strip()
+    finished_contests = None
+    rating = None
+    global_ranking = None
+    problems = None
+    test_cases = None
+    solved_question = None
+    accepted_submission = None
+
+    if len(problem_info) > 0:
+        finished_contests = problem_info[0].get_text().strip()
+        rating = problem_info[1].get_text().strip()
+        global_ranking = problem_info[2].get_text().strip()
+        solved_question = problem_info[3].get_text().strip()
+        accepted_submission = problem_info[4].get_text().strip()
+        try:
+            problems = problem_info[6].get_text().strip()
+            test_cases = problem_info[7].get_text().strip()
+        except Exception as ex:
+            logger.warn('Username=%s没有problems和test_cases信息' % username)
+
+    points = None
+    try:
+        progress_info = soup.find_all("div", class_="panel panel-default")[3]
+        progress_info = progress_info.find_all("span", class_="badge progress-bar-success")
+        points = progress_info[0].get_text().strip()
+    except Exception as e:
+        logger.warn('Username=%s没有point信息' % username)
 
     info = {'avatar': avatar, 'real_name': real_name, 'username': username, 'location': location, 'school': school,
             'user_slag': user_slag,
             'finished_contests': finished_contests, 'rating': rating, 'global_ranking': global_ranking,
             'solved_question': solved_question, 'accepted_submission': accepted_submission, 'points': points,
             'problems': problems, 'test_cases': test_cases}
+
+    logger.info('Username=%s的信息：%s' % (username, info))
     return info
 
 
@@ -207,7 +232,7 @@ def update_info(info):
     leetcode_info.accepted_submission = info['accepted_submission']
     leetcode_info.points = info['points']
     leetcode_info.executed_times += 1
-    leetcode_info.status=LeetcodeInfo.Status.RUNNING.value
+    leetcode_info.status = LeetcodeInfo.Status.RUNNING.value
     session.add(leetcode_info)
     session.commit()
 
@@ -228,6 +253,3 @@ def list_leetcode_info_by_status(status):
     :return:
     """
     return session.query(LeetcodeInfo).filter(LeetcodeInfo.status == status).all()
-
-
-
