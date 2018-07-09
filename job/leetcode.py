@@ -74,8 +74,14 @@ def __run(username, password):
     :param password: 登录密码
     :return:
     """
-
-    token, user_slag = login(username, password)
+    try:
+        token, user_slag = login(username, password)
+    except Exception as e:
+        logger.warn('Username=%s登录异常，详情' % username, str(e))
+        return
+    if token is None:
+        logger.warn('Username=%s登录失败' % username)
+        return
     info = get_info(token, user_slag)
 
     info['username'] = username
@@ -164,8 +170,11 @@ def get_info(token, user_slag):
     location = None
     school = None
     if len(location_info) > 0:
-        location = location_info[0].get_text().strip()
-        school = location_info[1].get_text().strip()
+        try:
+            location = location_info[0].get_text().strip()
+            school = location_info[1].get_text().strip()
+        except Exception as e:
+            logger.warn('Username=%s没有location和school信息' % username)
 
     problem_info = soup.find_all("span", class_="badge progress-bar-success")
 
@@ -178,11 +187,14 @@ def get_info(token, user_slag):
     accepted_submission = None
 
     if len(problem_info) > 0:
-        finished_contests = problem_info[0].get_text().strip()
-        rating = problem_info[1].get_text().strip()
-        global_ranking = problem_info[2].get_text().strip()
-        solved_question = problem_info[3].get_text().strip()
-        accepted_submission = problem_info[4].get_text().strip()
+        try:
+            finished_contests = problem_info[0].get_text().strip()
+            rating = problem_info[1].get_text().strip()
+            global_ranking = problem_info[2].get_text().strip()
+            solved_question = problem_info[3].get_text().strip()
+            accepted_submission = problem_info[4].get_text().strip()
+        except Exception as e:
+            logger.warn('Username=%s题目信息抓取异常' % username)
         try:
             problems = problem_info[6].get_text().strip()
             test_cases = problem_info[7].get_text().strip()
@@ -253,3 +265,4 @@ def list_leetcode_info_by_status(status):
     :return:
     """
     return session.query(LeetcodeInfo).filter(LeetcodeInfo.status == status).all()
+

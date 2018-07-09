@@ -202,4 +202,3 @@ def run():
         session.close()
 
 
-run()
