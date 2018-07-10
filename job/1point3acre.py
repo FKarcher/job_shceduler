@@ -65,7 +65,6 @@ def login(username, password):
     """
 
     data = {'username': username, 'password': password, 'quickforward': 'yes', 'handlekey': 'ls'}
-    # cookies = {'4Oaf_61d6_saltkey': 'mPss7DJa'}
     resp = requests.post(
         "http://www.1point3acres.com/bbs/member.php?mod=logging&action=login&loginsubmit=yes&infloat=yes&lssubmit=yes&inajax=1",
         data=data, headers=headers)
@@ -79,15 +78,6 @@ def login(username, password):
     for tag in soup.find_all('script'):
         urls.append(tag.get('src'))
     return resp.cookies['4Oaf_61d6_auth'], resp.cookies['4Oaf_61d6_saltkey'], urls
-
-
-# def get_token(urls, auth, salt_key):
-#     cookies = {'4Oaf_61d6_saltkey': auth, '4Oaf_61d6_auth': salt_key}
-#     resp = requests.get(urls[1], headers=headers, cookies=cookies)
-#     auth = resp.cookies['4Oaf_61d6_auth']
-#     requests.get(urls[2], headers=headers, cookies=cookies)
-#     requests.get(urls[3], headers=headers, cookies=cookies)
-#     return auth
 
 
 def get_info(auth, salt_key):
@@ -121,7 +111,6 @@ def sign_in(auth, salt_key, formhash, username):
     cookies = {
         '4Oaf_61d6_auth': auth,
         '4Oaf_61d6_saltkey': salt_key}
-    # cookies = {'4Oaf_61d6_auth': 'f3f9vOGrlxWBiWlfMC40Vm8jXTYxC5msoU3rV9Aqy1HJifTtTX8y8K2GNjJ5TjVXLqpXInniB2Ps8n6FgKHMj2FS1Mw', '4Oaf_61d6_saltkey': 'Ap3dz3P7'}
 
     headers['referer'] = 'http://www.1point3acres.com/bbs/home.php?mod=spacecp&ac=credit&showcredit=1'
 
