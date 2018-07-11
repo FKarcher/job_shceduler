@@ -45,4 +45,6 @@ service JobRPCService{
 
 ## v1.0.0
 
-Basic cron job scheduling.
+- Basic cron job scheduling.
+- LeetCode auto sign in script.
+- 1point3acres auto sign in script.
