@@ -7,7 +7,7 @@ __author__ = 'Jadyn Liang'
 
 ############ 数据库配置 #############
 DB_USERNAME = 'root'
-DB_PASSWORD = '123456'
+DB_PASSWORD = ''
 HOST = 'localhost'
 DB_NAME = 'blog'
 DB_URL_CONNECTION = 'mysql+pymysql://' + DB_USERNAME + ':' + DB_PASSWORD + '@' + HOST + '/' + DB_NAME + '?charset=utf8'
