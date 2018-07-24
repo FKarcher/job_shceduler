@@ -4,13 +4,13 @@
 import json
 import requests
 
-from common.db import session
+from common.db import session, engine
 from common.log import logger
 
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 from common.enum import labels
@@ -20,17 +20,30 @@ __author__ = 'Jiateng Liang'
 BaseModel = declarative_base()
 
 
+class LeetcodeTagInfo(BaseModel):
+    __tablename__ = 'leetcode_tag_info'
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    name = Column(String(100), nullable=False, unique=True, comment='标签名称')
+    slug = Column(String(150), nullable=False, unique=True, comment='标签url')
+    questions = Column(Text, comment='题目id, 里面的id为真实id（qid）')
+    create_time = Column(DateTime, nullable=False)
+    update_time = Column(DateTime, nullable=False, default=datetime.now())
+
+
 class LeetcodeProblem(BaseModel):
     __tablename__ = "leetcode_problems"
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    lid = Column(Integer, unique=True)
+    lid = Column(Integer, unique=True, comment='前端展现题目号')
+    qid = Column(Integer, unique=True, comment='LeetCode题目真正Id')
     title = Column(String(100), comment='题目')
-    desc = Column(String, comment='题干')
+    desc = Column(Text, comment='题干')
     difficulty = Column(Integer, nullable=False, comment='1简单 2中等 3困难', default=0)
     is_locked = Column(Integer, nullable=False, comment='0没锁 1上锁', default=0)
     type = Column(Integer, default=0, comment='0算法，1数据库')
     submit_url = Column(String(255), comment='代码提交链接')
-    code_def = Column(String, comment='代码初始化')
+    code_def = Column(Text, comment='代码初始化')
+    frequency = Column(Float, comment='题目出现频率')
+    title_slug = Column(String(150), comment='题目的url名称')
     create_time = Column(DateTime, nullable=False)
     update_time = Column(DateTime, nullable=False, default=datetime.now())
 
@@ -146,6 +159,25 @@ def process(token, leetcode_session):
     cookies = {'csrftoken': token,
                'LEETCODE_SESSION': leetcode_session}
 
+    # 打标签的题目信息
+    res = requests.get("https://leetcode.com/problems/api/tags/", headers=headers, cookies=cookies)
+    json_map = json.loads(res.text)
+    print(res.text)
+    companies = json_map['companies']
+    for company in companies:
+
+        try:
+            tag = LeetcodeTagInfo()
+            tag.name = company['name']
+            tag.slug = company['slug']
+            q_list = [str(x) for x in company['questions']]
+            tag.questions = '[' + ','.join(q_list) + ']'
+            save_tag_into_db(tag)
+            logger.info('LeetCode题目标签信息name=%s爬取完毕' % tag.name)
+        except Exception as e:
+            logger.info('LeetCode题目标签信息name=%s爬取失败，详情：%s' % (tag.name, str(e)))
+
+    # 算法题信息
     res = requests.get("https://leetcode.com/api/problems/all/", headers=headers, cookies=cookies)
 
     json_map = json.loads(res.text)
@@ -156,6 +188,8 @@ def process(token, leetcode_session):
         try:
             problem = LeetcodeProblem()
             problem.title = p_info['stat']['question__title']
+            problem.title_slug = p_info['stat']['question__title_slug']
+            problem.qid = p_info['stat']['question_id']
             lid, desc, submit_url, code_def = get_detail(token, leetcode_session,
                                                          p_info['stat']['question__title_slug'])
             problem.lid = lid
@@ -166,12 +200,14 @@ def process(token, leetcode_session):
             problem.type = LeetcodeProblem.Type.ALGO.value
             problem.is_locked = LeetcodeProblem.IsLocked.LOCKED.value if p_info[
                 'paid_only'] else LeetcodeProblem.IsLocked.UNLOCKED.value
-            save_into_db(problem)
+            problem.frequency = p_info['frequency']
+            save_problem_into_db(problem)
             logger.info('算法题题号=%s，题目=%s信息爬取完毕' % (problem.lid, problem.title))
         except Exception as e:
             logger.error('算法题题号=%s，题目=%s信息爬取失败，详情：%s' % (problem.lid, problem.title, str(e)))
             session.rollback()
 
+    # 数据库题信息
     res = requests.get("https://leetcode.com/api/problems/database/", headers=headers)
 
     json_map = json.loads(res.text)
@@ -182,6 +218,8 @@ def process(token, leetcode_session):
         try:
             problem = LeetcodeProblem()
             problem.title = p_info['stat']['question__title']
+            problem.title_slug = p_info['stat']['question__title_slug']
+            problem.qid = p_info['stat']['question_id']
             lid, desc, submit_url, code_def = get_detail(token, leetcode_session,
                                                          p_info['stat']['question__title_slug'])
             problem.lid = lid
@@ -192,7 +230,8 @@ def process(token, leetcode_session):
             problem.type = LeetcodeProblem.Type.DB.value
             problem.is_locked = LeetcodeProblem.IsLocked.LOCKED.value if p_info[
                 'paid_only'] else LeetcodeProblem.IsLocked.UNLOCKED.value
-            save_into_db(problem)
+            problem.frequency = p_info['frequency']
+            save_problem_into_db(problem)
             logger.info('DB题题号=%s，题目=%s信息爬取完毕' % (problem.lid, problem.title))
         except Exception as e:
             logger.error('DB题题号=%s，题目=%s信息爬取失败，详情：%s' % (problem.lid, problem.title, str(e)))
@@ -231,7 +270,7 @@ def get_detail(token, leetcode_session, title_slag):
     return lid, desc, submit_url, code_def
 
 
-def save_into_db(problem):
+def save_problem_into_db(problem):
     check = session.query(LeetcodeProblem).filter(LeetcodeProblem.lid == problem.lid).first()
     if check:
         check.lid = problem.lid
@@ -242,9 +281,26 @@ def save_into_db(problem):
         check.type = problem.type
         check.submit_url = problem.submit_url
         check.code_def = problem.code_def
+        check.qid = problem.qid
+        check.frequency = problem.frequency
+        check.title_slug = problem.title_slug
         check.update_time = datetime.now()
         session.add(check)
     else:
         problem.create_time = datetime.now()
         session.add(problem)
+    session.commit()
+
+
+def save_tag_into_db(tag):
+    check = session.query(LeetcodeTagInfo).filter(LeetcodeTagInfo.name == tag.name).first()
+    if check:
+        check.name = tag.name
+        check.slug = tag.slug
+        check.questions = tag.questions
+        check.update_time = datetime.now()
+        session.add(check)
+    else:
+        tag.create_time = datetime.now()
+        session.add(tag)
     session.commit()
