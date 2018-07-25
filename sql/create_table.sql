@@ -42,8 +42,8 @@ create table leetcode_problems
   comment '题目出现频率',
   title_slug  varchar(150) null
   comment '题目的url名称',
-  create_time datetime     not null,
-  update_time datetime     not null,
+  create_time timestamp     not null,
+  update_time timestamp  default current_timestamp   not null,
   constraint lid
   unique (lid),
   constraint qid
@@ -61,7 +61,7 @@ create table leetcode_tag_info
   questions   text         null
   comment '题目id',
   create_time datetime     not null,
-  update_time datetime     not null,
+  update_time datetime  default current_timestamp  not null,
   constraint name
   unique (name),
   constraint slug
