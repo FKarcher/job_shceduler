@@ -154,7 +154,7 @@ def login(username, password):
 def process(token, leetcode_session):
     headers = {'referer': 'https://leetcode.com/',
                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) '
-                             'Chrome/67.0.3396.87 Safari/537.36'}
+                             'Chrome/67.0.3396.87 Safari/537.36', 'x-csrftoken': token}
 
     cookies = {'csrftoken': token,
                'LEETCODE_SESSION': leetcode_session}
@@ -162,7 +162,6 @@ def process(token, leetcode_session):
     # 打标签的题目信息
     res = requests.get("https://leetcode.com/problems/api/tags/", headers=headers, cookies=cookies)
     json_map = json.loads(res.text)
-    print(res.text)
     companies = json_map['companies']
     for company in companies:
 
@@ -170,8 +169,7 @@ def process(token, leetcode_session):
             tag = LeetcodeTagInfo()
             tag.name = company['name']
             tag.slug = company['slug']
-            q_list = [str(x) for x in company['questions']]
-            tag.questions = '[' + ','.join(q_list) + ']'
+            tag.questions = get_tag_info(company['slug'], headers, cookies)
             save_tag_into_db(tag)
             logger.info('LeetCode题目标签信息name=%s爬取完毕' % tag.name)
         except Exception as e:
@@ -304,3 +302,78 @@ def save_tag_into_db(tag):
         tag.create_time = datetime.now()
         session.add(tag)
     session.commit()
+
+
+def get_tag_info(slug, headers, cookies):
+    query = "query getCompanyTag($slug: String!) {\n" \
+            "  companyTag(slug: $slug) {\n" \
+            "    name\n" \
+            "    translatedName\n" \
+            "    frequencies\n" \
+            "    questions {\n" \
+            "      ...questionFields\n" \
+            "      __typename\n" \
+            "    }\n" \
+            "    __typename\n" \
+            "  }\n" \
+            "  favoritesLists {\n" \
+            "    publicFavorites {\n" \
+            "      ...favoriteFields\n" \
+            "      __typename\n" \
+            "    }\n" \
+            "    privateFavorites {\n" \
+            "      ...favoriteFields\n" \
+            "      __typename\n" \
+            "    }\n" \
+            "    __typename\n" \
+            "  }\n" \
+            "}\n" \
+            "\n" \
+            "fragment favoriteFields on FavoriteNode {\n" \
+            "  idHash\n" \
+            "  id\n" \
+            "  name\n" \
+            "  isPublicFavorite\n" \
+            "  viewCount\n" \
+            "  creator\n" \
+            "  isWatched\n" \
+            "  questions {\n" \
+            "    questionId\n" \
+            "    title\n" \
+            "    titleSlug\n" \
+            "    __typename\n" \
+            "  }\n" \
+            "  __typename\n" \
+            "}\n" \
+            "\n" \
+            "fragment questionFields on QuestionNode {\n" \
+            "  status\n" \
+            "  questionId\n" \
+            "  questionFrontendId\n" \
+            "  title\n" \
+            "  titleSlug\n" \
+            "  translatedTitle\n" \
+            "  stats\n" \
+            "  difficulty\n" \
+            "  isPaidOnly\n" \
+            "  topicTags {\n" \
+            "    name\n" \
+            "    translatedName\n" \
+            "    slug\n" \
+            "    __typename\n" \
+            "  }\n" \
+            "  frequencyTimePeriod\n" \
+            "  __typename\n" \
+            "}"
+    data = {'operationName': 'getCompanyTag', 'query': query, 'variables': {'slug': slug}}
+    res = requests.post("https://leetcode.com/graphql", headers=headers, json=data, cookies=cookies)
+    json_map = json.loads(res.text)
+    L = []
+    for q in json_map['data']['companyTag']['questions']:
+        L.append(q['questionId'])
+
+    return '[' + ','.join(L) + ']'
+
+
+def run():
+    __run('luxuan.wang@nyu.edu', '525=xuan')
