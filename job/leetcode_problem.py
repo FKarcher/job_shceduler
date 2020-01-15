@@ -376,4 +376,4 @@ def get_tag_info(slug, headers, cookies):
 
 
 def run():
-    __run('luxuan.wang@nyu.edu', '525=xuan')
+    __run('abv', 'abc')
